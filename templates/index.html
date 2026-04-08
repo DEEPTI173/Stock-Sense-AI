@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Grocery AI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0"></script>
+
+<style>
+:root {
+    --bg: linear-gradient(-45deg,#1a1a2e,#16213e,#0f3460,#533483);
+    --card: rgba(255,255,255,0.1);
+    --text: white;
+}
+
+.light {
+    --bg: #f5f5f5;
+    --card: white;
+    --text: black;
+}
+
+body {
+    margin:0;
+    font-family:Segoe UI;
+    background: var(--bg);
+    background-size:400% 400%;
+    animation:bg 10s infinite;
+    color: var(--text);
+}
+
+@keyframes bg {
+    0%{background-position:0%}
+    50%{background-position:100%}
+    100%{background-position:0%}
+}
+
+h1 { text-align:center; }
+
+.toggle {
+    position:absolute;
+    top:15px;
+    right:20px;
+    padding:8px;
+    border-radius:10px;
+}
+
+.card {
+    width:340px;
+    margin:auto;
+    padding:20px;
+    border-radius:20px;
+    background:var(--card);
+    backdrop-filter:blur(10px);
+}
+
+.stat {
+    margin:5px;
+    padding:10px;
+    border-radius:10px;
+    background:rgba(0,0,0,0.3);
+}
+
+button {
+    margin:5px;
+    padding:10px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.graphs {
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+
+canvas {
+    width:300px!important;
+    height:220px!important;
+    margin:10px;
+}
+</style>
+</head>
+
+<body>
+
+<button class="toggle" onclick="toggleTheme()">🌗</button>
+
+<h1>🛒 Smart Grocery AI Dashboard</h1>
+
+<div class="card">
+<div class="stat" id="stock">Stock: 0</div>
+<div class="stat" id="demand">Demand: 0</div>
+<div class="stat" id="expiry">Expiry: 0</div>
+<div class="stat" id="step">Step: 0</div>
+<div class="stat" id="reward">Reward: 0</div>
+<div class="stat" id="aiText">AI: Waiting...</div>
+</div>
+
+<div style="text-align:center;">
+<input id="demandInput" placeholder="Enter Demand">
+<button onclick="setDemand()">Set Demand</button><br>
+
+<button onclick="sendAction(0)">Do Nothing</button>
+<button onclick="sendAction(1)">Small Stock</button>
+<button onclick="sendAction(2)">Large Stock</button>
+<button onclick="autoAI()">🤖 StockSense AI</button>
+<button onclick="demo()">🎬 Demo</button>
+</div>
+
+<div class="graphs">
+<canvas id="r"></canvas>
+<canvas id="s"></canvas>
+<canvas id="l"></canvas>
+</div>
+
+<script>
+let rewards=[],stocks=[],demands=[],learning=[],total=0;
+let simulationOver=false;
+let interval=null;
+
+speechSynthesis.onvoiceschanged = () => {};
+let introPlaying = true;
+
+/* 🎤 VOICE FUNCTION */
+function speak(text){
+
+    // 🔥 Stop any ongoing voice (MOST IMPORTANT)
+    speechSynthesis.cancel();
+
+    const msg = new SpeechSynthesisUtterance(text);
+
+    const voices = speechSynthesis.getVoices();
+
+    const femaleVoice = voices.find(voice =>
+        voice.name.toLowerCase().includes("zira") ||
+        voice.name.toLowerCase().includes("samantha") ||
+        voice.name.toLowerCase().includes("female")
+    );
+
+    if(femaleVoice){
+        msg.voice = femaleVoice;
+    }
+
+    msg.rate = 1;
+    msg.pitch = 1.2;
+
+    speechSynthesis.speak(msg);
+}
+
+/* 🌗 THEME */
+function toggleTheme(){
+    document.body.classList.toggle("light");
+}
+
+/* 🚀 START */
+window.onload=()=>{
+    speak("Hello, welcome to Smart Grocery Dashboard. An intelligent inventory optimization system powered by artificial intelligence. This system analyzes stock levels, predicts demand, and makes smart restocking decisions to maximize profit while minimizing waste. Let's begin the simulation, Please set demand and select stock mode.");
+
+    setTimeout(() => {
+        introPlaying = false;
+    }, 4000); //intro time
+
+    fetch('/reset',{method:'POST'})
+    .then(r=>r.json())
+    .then(d=>update({state:d.state, reward:0}));
+};
+
+/* SET DEMAND */
+function setDemand(){
+fetch('/set_demand',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({demand:document.getElementById("demandInput").value})
+});
+}
+
+/* AI EXPLAIN */
+function explain(s){
+if(s.stock<s.demand)return "Low stock → restock";
+if(s.stock>60)return "Overstock risk";
+return "Optimal balance";
+}
+
+/* UPDATE UI */
+function update(d){
+
+if(simulationOver) return;
+
+let s=d.state;
+total+=d.reward;
+
+document.getElementById("stock").innerHTML="📦 Stock: "+s.stock;
+document.getElementById("demand").innerHTML="📊 Demand: "+s.demand;
+document.getElementById("expiry").innerHTML="⏳ Expiry: "+(s.expiry ?? 0);
+document.getElementById("step").innerHTML="🔁 Step: "+s.step;
+document.getElementById("reward").innerHTML="💰 Reward: "+d.reward;
+document.getElementById("aiText").innerHTML="🤖 "+explain(s);
+
+/* GRAPH */
+rewards.push(d.reward);
+stocks.push(s.stock);
+demands.push(s.demand);
+learning.push(total);
+
+rc.data.labels.push("S"+s.step);
+sc.data.labels.push("S"+s.step);
+lc.data.labels.push("S"+s.step);
+
+rc.update(); sc.update(); lc.update();
+
+/* 🎤 SPEAK STEP */
+// speak("Step " + s.step + ", stock " + s.stock + ", demand " + s.demand);
+
+/* END */
+if(d.done){
+simulationOver=true;
+if(interval) clearInterval(interval);
+
+confetti();
+
+speak("Simulation Completed Please restart");
+
+document.body.innerHTML=`
+<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:black;color:white;">
+<h1>🎯 Simulation Complete</h1>
+<h2>Total Reward: ${total}</h2>
+<button onclick="location.reload()">🔄 Restart</button>
+</div>`;
+}
+}
+
+/* ACTION */
+function sendAction(a){
+if(simulationOver) return;
+
+let map={
+0:"Do Nothing",
+1:"Small Restock",
+2:"Large Restock"
+};
+
+fetch('/step',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({action:map[a]})
+})
+.then(r=>r.json()).then(update);
+}
+
+/* AI MODE */
+function autoAI(){
+
+    // 🔥 Stop any previous interval
+    if(interval){
+        clearInterval(interval);
+    }
+
+    // 🔥 Stop any voice
+    speechSynthesis.cancel();
+
+    // 🎤 Speak
+    speak("Hey! I am Stock Sense AI, I automatically set stock levels, You just set the demand.");
+
+    // 🔥 Start AI loop
+    interval = setInterval(()=>{
+
+        fetch('/ai_step',{method:'POST'})
+        .then(r => r.json())
+        .then(data => {
+            update(data);
+        })
+        .catch(err => {
+            console.error("AI Error:", err);
+        });
+
+    }, 800);
+}
+
+/* DEMO */
+function demo(){
+
+    if(interval){
+        clearInterval(interval);
+    }
+
+    speechSynthesis.cancel();
+
+    speak("Demo mode is Live. Sit back and watch how Stock Sense AI simulates intelligent inventory decisions.");
+
+    interval = setInterval(()=>{
+        sendAction(Math.floor(Math.random()*3));
+    },800);
+}
+
+/* CHARTS */
+const rc=new Chart(document.getElementById("r"),{
+type:'line',
+data:{labels:[],datasets:[{label:"Reward",data:rewards}]}
+});
+
+const sc=new Chart(document.getElementById("s"),{
+type:'line',
+data:{labels:[],datasets:[
+{label:"Stock",data:stocks},
+{label:"Demand",data:demands}
+]}
+});
+
+const lc=new Chart(document.getElementById("l"),{
+type:'line',
+data:{labels:[],datasets:[{label:"Learning",data:learning}]}
+});
+</script>
+
+</body>
+</html>
