@@ -3,7 +3,7 @@ import requests
 from openai import OpenAI
 
 # -------- ENV VARIABLES --------
-API_BASE_URL = os.getenv("API_BASE_URL", "https://your-hf-space.hf.space")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://deepti2005-smart-grocery-dashboard.hf.space")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
