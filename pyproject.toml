@@ -1,0 +1,16 @@
+[project]
+name = "stocksense-ai"
+version = "0.1.0"
+description = "Smart Inventory Optimization Environment"
+authors = [
+    {name = "Deepti"}
+]
+dependencies = [
+    "flask",
+    "requests",
+    "openai"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
