@@ -1,0 +1,7 @@
+name: stocksense-ai
+description: Smart Inventory Optimization Environment
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
