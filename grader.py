@@ -1,67 +1,46 @@
 from grocery_env import GroceryEnv
 import random
 
-def choose_action(state):
-    """Smart policy with slight randomness"""
-
-    # 20% exploration
-    if random.random() < 0.2:
-        return random.choice([
-            "Do Nothing",
-            "Small Restock",
-            "Large Restock"
-        ])
-
-    # Exploitation (smart logic)
-    if state["stock"] < state["demand"]:
-        return "Large Restock"
-    elif state["stock"] < state["demand"] + 5:
-        return "Small Restock"
-    else:
-        return "Do Nothing"
-
-
 def grade():
     env = GroceryEnv()
     state = env.reset()
 
     total_reward = 0
-    steps = 0
 
-    print("\n🚀 Grading Started...\n")
+    for _ in range(20):
 
-    for step in range(20):
+        # 🤖 Simple intelligent policy
+        if state["stock"] < state["demand"]:
+            action = 2
+        elif state["stock"] < 25:
+            action = 1
+        else:
+            action = 0
 
-        action = choose_action(state)
+        # 🎲 small randomness (important for realism)
+        if random.random() < 0.2:
+            action = random.choice([0, 1, 2])
 
+        # ✅ FIX: your env returns 4 values
         state, reward, done, waste = env.step(action)
 
         total_reward += reward
-        steps += 1
-
-        print(f"Step {step+1}: Action={action}, Reward={reward}, Stock={state['stock']}, Demand={state['demand']}")
 
         if done:
             break
 
-    print("\n🎯 Final Result:")
-    print("Total Reward:", total_reward)
+    # 🎯 Convert reward → score (MUST be between 0 and 1, not exact 0/1)
+    score = total_reward / 200
 
-    # 🎯 SCORING LOGIC (IMPROVED)
-    if total_reward >= 100:
-        print("🔥 Grade: Excellent")
-        return 1
-    elif total_reward >= 60:
-        print("👍 Grade: Good")
-        return 1
-    elif total_reward >= 30:
-        print("⚖️ Grade: Average")
-        return 0
-    else:
-        print("⚠️ Grade: Poor")
-        return 0
+    # 🚨 VERY IMPORTANT 
+    if score <= 0:
+        score = 0.1
+    elif score >= 1:
+        score = 0.9
+
+    return score
 
 
+# optional (for local testing)
 if __name__ == "__main__":
-    score = grade()
-    print("\nFinal Score:", score)
+    print("Score:", grade())
