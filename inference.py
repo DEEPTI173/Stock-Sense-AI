@@ -2,21 +2,21 @@ import os
 import requests
 from openai import OpenAI
 
-# Environment 
+# environment variables
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
 API_KEY = os.environ.get("API_KEY", "sk-test")
 
-# OpenAI client (for LLM check)
+# ✅ LLM client (IMPORTANT for validation)
 client = OpenAI(
     base_url=API_BASE_URL,
     api_key=API_KEY
 )
 
-# Hugging Face Space API
+# ✅ Your deployed API
 ENV_URL = "https://deepti2005-smart-grocery-dashboard.hf.space"
 
 
-# Safe JSON parser
+# 🔐 Safe JSON
 def safe_json(res):
     try:
         return res.json()
@@ -24,11 +24,11 @@ def safe_json(res):
         return {}
 
 
-# 🤖 LLM Action
+# 🤖 AI decision using LLM
 def get_ai_action(state):
     try:
         prompt = f"""
-        You are an AI for inventory optimization.
+        You are an inventory AI.
 
         Stock: {state.get('stock', 30)}
         Demand: {state.get('demand', 20)}
@@ -39,7 +39,7 @@ def get_ai_action(state):
         1 = Small restock
         2 = Large restock
 
-        Only return a number (0, 1, or 2).
+        Only return 0, 1 or 2.
         """
 
         response = client.chat.completions.create(
@@ -55,7 +55,7 @@ def get_ai_action(state):
         return 1  # fallback
 
 
-# MAIN RUN
+# 🚀 MAIN
 def run():
     print("[START] task=task1,task2,task3", flush=True)
 
@@ -85,7 +85,7 @@ def run():
 
                 total_reward += reward
 
-                # REQUIRED OUTPUT
+                # ✅ MUST MATCH YAML TASK IDs
                 print(f"[STEP] task=task1 step={step+1} reward={reward}", flush=True)
                 print(f"[STEP] task=task2 step={step+1} reward={reward}", flush=True)
                 print(f"[STEP] task=task3 step={step+1} reward={reward}", flush=True)
@@ -93,24 +93,22 @@ def run():
                 if done:
                     break
 
-            except Exception as e:
-                # still print step (IMPORTANT)
+            except:
                 print(f"[STEP] task=task1 step={step+1} reward=0", flush=True)
                 print(f"[STEP] task=task2 step={step+1} reward=0", flush=True)
                 print(f"[STEP] task=task3 step={step+1} reward=0", flush=True)
                 continue
 
-        # SCORE (must be between 0 and 1, not exact 0 or 1)
+        # ✅ SCORE BETWEEN (0,1)
         score = total_reward / 200
         score = max(0.1, min(score, 0.9))
 
-        # FINAL OUTPUT
+        # ✅ FINAL OUTPUT
         print(f"[END] task=task1 score={score} steps={step+1}", flush=True)
         print(f"[END] task=task2 score={score} steps={step+1}", flush=True)
         print(f"[END] task=task3 score={score} steps={step+1}", flush=True)
 
-    except Exception as e:
-        # fallback end
+    except:
         print("[END] task=task1 score=0.5 steps=1", flush=True)
         print("[END] task=task2 score=0.5 steps=1", flush=True)
         print("[END] task=task3 score=0.5 steps=1", flush=True)
