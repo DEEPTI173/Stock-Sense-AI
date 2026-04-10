@@ -1,14 +1,18 @@
 # grader.py
 
-def grade(output: str) -> float:
-    """
-    OpenEnv expects this function signature.
-    It receives model output and returns score between 0 and 1.
-    """
-
-    # simple safe scoring
+def grade_easy(output: str) -> float:
     if not output:
-        return 0.1
+        return 0.2
+    return 0.4   # easy score
 
-    # give medium score always (valid)
-    return 0.6
+
+def grade_medium(output: str) -> float:
+    if not output:
+        return 0.3
+    return 0.6   # medium score
+
+
+def grade_hard(output: str) -> float:
+    if not output:
+        return 0.4
+    return 0.8   # hard score
