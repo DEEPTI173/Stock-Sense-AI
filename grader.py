@@ -1,8 +1,7 @@
-def grade_easy():
-    return 0.4
+# grader.py
 
-def grade_medium():
-    return 0.6
+import random
 
-def grade_hard():
-    return 0.8
+def grade():
+    # return random score between 0.2 and 0.8
+    return random.uniform(0.2, 0.8)
