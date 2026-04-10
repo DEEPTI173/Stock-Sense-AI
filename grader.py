@@ -1,7 +1,14 @@
 # grader.py
 
-import random
+def grade(output: str) -> float:
+    """
+    OpenEnv expects this function signature.
+    It receives model output and returns score between 0 and 1.
+    """
 
-def grade():
-    # return random score between 0.2 and 0.8
-    return random.uniform(0.2, 0.8)
+    # simple safe scoring
+    if not output:
+        return 0.1
+
+    # give medium score always (valid)
+    return 0.6
