@@ -3,16 +3,16 @@ description: Smart Inventory Optimization Environment
 
 tasks:
   - id: task1
-    name: inventory_task_1
-    grader: grader:grade
+    name: easy_task
+    grader: grader:grade_easy
 
   - id: task2
-    name: inventory_task_2
-    grader: grader:grade
+    name: medium_task
+    grader: grader:grade_medium
 
   - id: task3
-    name: inventory_task_3
-    grader: grader:grade
+    name: hard_task
+    grader: grader:grade_hard
 
 endpoints:
   reset: /reset
